@@ -41,7 +41,7 @@ export async function POST(request: NextRequest) {
       body: JSON.stringify({
         from,
         to: [email],
-        reply_to: "kyren@jointomorrow.org",
+        reply_to: "info@jointomorrow.org",
         subject: `${name}, today you met Tomorrow.`,
         html,
         attachments: [{ filename: "our-photo.jpg", content: match[2], content_id: "meeting-photo" }]
