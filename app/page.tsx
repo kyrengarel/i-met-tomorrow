@@ -8,7 +8,7 @@ type Details = { name: string; email: string; location: string; note: string; we
 const blank: Details = { name: "", email: "", location: "", note: "", website: "" };
 
 function Mark({ small = false }: { small?: boolean }) {
-  return <div className={`mark ${small ? "markSmall" : ""}`} aria-label="The Tomorrow Club"><span>T</span><span>C</span></div>;
+  return <div className={`mark ${small ? "markSmall" : ""}`}><img src="/tc-logo.png" alt="The Tomorrow Club" /></div>;
 }
 
 export default function Home() {
