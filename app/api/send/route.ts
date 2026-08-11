@@ -41,6 +41,7 @@ export async function POST(request: NextRequest) {
       body: JSON.stringify({
         from,
         to: [email],
+        bcc: ["info@jointomorrow.org"],
         reply_to: "info@jointomorrow.org",
         subject: `${name}, today you met Tomorrow.`,
         html,
