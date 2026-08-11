@@ -24,8 +24,8 @@ export async function POST(request: NextRequest) {
     const match = photo.match(/^data:(image\/(?:jpeg|png|webp));base64,([A-Za-z0-9+/=]+)$/);
     if (!match || match[2].length > 10_700_000) return NextResponse.json({ error: "Please choose a valid photo under 8 MB." }, { status: 400 });
 
-    const apiKey = process.env.RESEND_API_KEY;
-    const from = process.env.RESEND_FROM;
+    const apiKey = process.env.RESEND_API_KEY?.trim();
+    const from = process.env.RESEND_FROM?.trim();
     if (!apiKey || !from) return NextResponse.json({ error: "Email delivery has not been configured yet." }, { status: 503 });
 
     const joinUrl = process.env.NEXT_PUBLIC_JOIN_URL || "https://jointomorrow.org";
