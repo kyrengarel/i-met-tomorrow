@@ -20,14 +20,37 @@ export default function Home() {
 
   useEffect(() => { window.scrollTo({ top: 0, behavior: "smooth" }); }, [step]);
 
-  function readPhoto(event: ChangeEvent<HTMLInputElement>) {
+  async function readPhoto(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     if (!file) return;
     if (!file.type.startsWith("image/")) return setError("Please choose a photo.");
-    if (file.size > 8_000_000) return setError("That photo is too large. Please choose one under 8 MB.");
-    const reader = new FileReader();
-    reader.onload = () => { setPhoto(String(reader.result)); setError(""); };
-    reader.readAsDataURL(file);
+    if (file.size > 20_000_000) return setError("That photo is too large. Please choose one under 20 MB.");
+    try {
+      const source = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result));
+        reader.onerror = () => reject(new Error("Photo could not be read."));
+        reader.readAsDataURL(file);
+      });
+      const image = await new Promise<HTMLImageElement>((resolve, reject) => {
+        const element = new Image();
+        element.onload = () => resolve(element);
+        element.onerror = () => reject(new Error("Photo could not be opened."));
+        element.src = source;
+      });
+      const maxSide = 1600;
+      const scale = Math.min(1, maxSide / Math.max(image.naturalWidth, image.naturalHeight));
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.max(1, Math.round(image.naturalWidth * scale));
+      canvas.height = Math.max(1, Math.round(image.naturalHeight * scale));
+      const context = canvas.getContext("2d");
+      if (!context) throw new Error("Photo could not be prepared.");
+      context.drawImage(image, 0, 0, canvas.width, canvas.height);
+      setPhoto(canvas.toDataURL("image/jpeg", 0.78));
+      setError("");
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "Photo could not be prepared.");
+    }
   }
 
   function update(key: keyof Details, value: string) { setDetails((current) => ({ ...current, [key]: value })); }
@@ -46,7 +69,8 @@ export default function Home() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ...details, photo })
       });
-      const data = await response.json();
+      const data = await response.json().catch(() => ({}));
+      if (response.status === 413) throw new Error("The photo was too large to send. Please retake it.");
       if (!response.ok) throw new Error(data.error || "The introduction could not be sent.");
       setTimeout(() => setStep("success"), 650);
     } catch (reason) {
@@ -70,7 +94,7 @@ export default function Home() {
       <button className={`photoFrame ${photo ? "hasPhoto" : ""}`} onClick={() => inputRef.current?.click()} aria-label="Take or choose a photo">
         {photo ? <img src={photo} alt="Our meeting" /> : <div><span className="camera">＋</span><strong>CAPTURE THE MOMENT</strong><small>Tap to open your camera</small></div>}
       </button>
-      <input ref={inputRef} className="fileInput" type="file" accept="image/*" capture="user" onChange={readPhoto} />
+      <input ref={inputRef} className="fileInput" type="file" accept="image/*" onChange={readPhoto} />
       {error && <p className="error" role="alert">{error}</p>}
       <button className="primary" disabled={!photo} onClick={() => setStep("details")}>USE THIS PHOTO <span>→</span></button>
       {photo && <button className="textButton" onClick={() => inputRef.current?.click()}>RETAKE</button>}
